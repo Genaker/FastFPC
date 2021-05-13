@@ -24,6 +24,11 @@ $config = require __DIR__.'/../app/etc/env.php';
 $_cache = [];
 //https://github.com/phpredis/phpredis/blob/develop/INSTALL.markdown
 
+// It works only With Redis! 
+if (!isset($config['cache']['frontend']['page_cache']['backend_options']['server']) && !isset($config['cache']['frontend']['page_cache']['backend_options']['port'])){
+	return false;
+}
+	
 $redisLoc = new Redis();
 $redisLoc->pconnect($config['cache']['frontend']['page_cache']['backend_options']['server'],
   $config['cache']['frontend']['page_cache']['backend_options']['port'], 0, 'FPC');
