@@ -11,10 +11,10 @@ fastcgi_param PHP_VALUE "auto_prepend_file=/var/www/html/magento/app/fpc.php";
 
 or 
 
-add it as a first line to app/bootstrap.php
+add it as a first line to app/bootstrap.php or pub/index.php
 
 ```
-require './fpc.php';
+include "/var/www/html/magento/app/fpc.php";
 ```
 
 # Performance
