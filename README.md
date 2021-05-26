@@ -16,3 +16,9 @@ add it as a first line to app/bootstrap.php
 ```
 require './fpc.php';
 ```
+
+# Performance
+
+FPC generation time is 0.000481128 second.
+
+
