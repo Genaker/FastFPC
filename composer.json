@@ -1,0 +1,16 @@
+{
+    "name": "mage/fpc",
+    "description": "",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "minimum-stability": "stable",
+    "require": {},
+    "autoload": {
+        "files": [
+            "src/Mage/FPC/registration.php"
+        ],
+        "psr-4": {
+            "Mage\\Fpc\\": "src/Mage/FPC"
+        }
+    }
+}
