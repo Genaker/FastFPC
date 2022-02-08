@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\App\PageCache\Identifier">
+        
+        <plugin name="core-app-area-design-exception-plugin"
+                sortOrder="10" 
+                disabled="true"/>
+
+        <plugin name="remove-magento-junk"
+                type="Mage\FPC\Plugin\CacheIdentifierPlugin" sortOrder="999" 
+                disabled="false"/>
+                
+    </type>
+</config>
