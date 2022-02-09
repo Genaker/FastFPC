@@ -29,9 +29,10 @@ class Deploy extends Command
         $name = $input->getArgument(self::NAME_ARGUMENT);
         $option = $input->getOption(self::NAME_OPTION);
         $includeFile = dirname(__DIR__) . "/FPC.php";
-        exec("sed '2 include(\"$includeFile\")'; " . BP . "/pub/index.php", $output);
+	    $cmd = "grep -r \"FPC.php\" " . BP . "/pub/index.php" . " || sed -i '2 i include \"$includeFile\";' " . BP . "/pub/index.php";
+	    echo $cmd . "\n";
+        exec($cmd, $output);
         var_dump($output);
-        $output->writeln("Done! Added to the pub/index.php ");
     }
 
     /**
