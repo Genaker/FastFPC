@@ -10,7 +10,12 @@
             "src/Mage/FPC/registration.php"
         ],
         "psr-4": {
-            "Mage\\Fpc\\": "src/Mage/FPC"
+            "Mage\\FPC\\": "src/Mage/FPC"
         }
+    }
+    "scripts": {
+        "post-autoload-dump": [
+            "Mage\\FPC\\Composer::postDump"
+        ]
     }
 }
