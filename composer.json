@@ -12,7 +12,7 @@
         "psr-4": {
             "Mage\\FPC\\": "src/Mage/FPC"
         }
-    }
+    },
     "scripts": {
         "post-autoload-dump": [
             "Mage\\FPC\\Composer::postDump"
