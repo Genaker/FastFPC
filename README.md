@@ -23,6 +23,14 @@ require "../app/code/Mage/FPC.php";
 
 Also this extension will work without this aditional interactions (jsut install and forget) but it will be slower becouse it will load all Magento 2 via autoloader.
 
+or do next:
+
+```
+composer require mage/fpc
+bin/magento setup:upgrade
+bin/magento fpc:deploy
+```
+
 # Performance
 
 FPC generation time is 0.000481128 second.
