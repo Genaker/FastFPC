@@ -4,3 +4,7 @@
 	'Mage_FPC',
 	__DIR__
 );
+
+if (!class_exists('FPC')) {
+    require ("FPC.php");
+}
