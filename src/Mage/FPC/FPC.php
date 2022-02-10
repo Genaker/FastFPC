@@ -129,6 +129,7 @@ class FPC
         header('FPC-TIME: ' . (string)$time);
 
       echo $page['content'];
+      // Output cached page and die 
       die();
     } catch (\Throwable $e) {
       if ($this->debug)
@@ -201,7 +202,7 @@ class FPC
       return $page;
     } else {
       if ($this->debug)
-        header('FPC-ERROR: Compression method issue');
+        header('FPC-ERROR: Unsupported Compression method - ' . $arch);
       return false;
     }
   }
