@@ -6,5 +6,5 @@
 );
 
 if (!class_exists('FPC')) {
-    require ("FPC.php");
+    require("FPC.php");
 }
