@@ -49,9 +49,9 @@ class FPC
     }
 
     //For app folder
-    //$config = require __DIR__ . '/../../../../app/etc/env.php';
+    $config = require __DIR__ . '/../../../../app/etc/env.php';
     //For Composer Folder ToDO: remove src from the composer to make app = to vendor
-    $config = require __DIR__ . '/../../../../../../app/etc/env.php';
+    // $config = require __DIR__ . '/../../../../../../app/etc/env.php';
 
     //https://github.com/phpredis/phpredis/blob/develop/INSTALL.markdown
 
