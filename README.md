@@ -6,7 +6,6 @@ The **phpredis** extension provides a native PHP API for communicating with the 
 #Installation of the php-pecl-redis package, from the EPEL repository:
 
 yum install php-pecl-redis
-
 ```
 
 ## Installation 
