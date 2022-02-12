@@ -7,10 +7,10 @@
     "require": {},
     "autoload": {
         "files": [
-            "src/Mage/FPC/registration.php"
+            "Mage/FPC/registration.php"
         ],
         "psr-4": {
-            "Mage\\FPC\\": "src/Mage/FPC"
+            "Mage\\FPC\\": "Mage/FPC"
         }
     },
     "scripts": {
