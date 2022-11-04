@@ -128,6 +128,12 @@ class FPC
       if ($this->debug)
         header('FPC-TIME: ' . (string)$time);
 
+     if (isset($page['headers']) && count($page['headers']) > 0) {
+           foreach($page['headers'] as $header => $value){
+                header($header . ': ' . $value);
+           }
+      }  
+      
       echo $page['content'];
       // Output cached page and die 
       die();
