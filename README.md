@@ -1,5 +1,5 @@
 # FastFPC
-this extension requres Redis Magento Builtin cache enabled and  php_redis php extension installed.
+this extension requires Redis Magento Builtin cache enabled and  php_redis php extension installed.
 The **phpredis** extension provides a native PHP API for communicating with the Redis key-value store. 
 ```
 #RHEL / CentOS
@@ -10,7 +10,7 @@ yum install php-pecl-redis
 
 ## The Idea behind this Magento 2 FPC performance extension 
 
-When I developed a Shopware 6 based website I noticed fast sub 1ms performance of the FPC cache. I checked the code and it amazed me. It is simple and made a right PHP  way! You don't need Varnish to run your FPC cache fast. You need just fast code without reusing the Magento 2 junk core framework.
+When I developed a Shopware 6-based website I noticed fast sub 1ms performance of the FPC cache. I checked the code and it amazed me. It is simple and made a right PHP  way! You don't need Varnish to run your FPC cache fast. You need just fast code without reusing the Magento 2 junk core framework.
 
 ## Installation 
 
@@ -27,13 +27,13 @@ add it as a first line to app/bootstrap.php or pub/index.php
 
 Also if you are using composer to install this stuff your path will be something like : ../vendor/mage/fpc/src/Mage/FPC.php
 
-Installation into app folder is preferable.  It is not a usless library. It is a part of your busines to keep your site FAST. 
+Installation into the app folder is preferable.  It is not a useless library. It is a part of your business to keep your site FAST. 
 
 ```
 require "../app/code/Mage/FPC.php";
 ```
 
-Also this extension will work without this aditional interactions (jsut install and forget) but it will be slower becouse it will load all Magento 2 via autoloader.
+Also, this extension will work without this additional interaction (just install and forget) but it will be slower because it will load all Magento 2 via autoloader.
 
 or do next:
 
