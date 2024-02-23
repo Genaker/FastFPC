@@ -1,6 +1,8 @@
 # FastFPC
 this extension requires Redis Magento Builtin cache enabled and  php_redis php extension installed.
 The **phpredis** extension provides a native PHP API for communicating with the Redis key-value store. 
+
+*Tested With: 2.4.7 Magento version*
 ```
 #RHEL / CentOS
 #Installation of the php-pecl-redis package, from the EPEL repository:
