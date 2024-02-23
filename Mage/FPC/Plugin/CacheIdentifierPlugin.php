@@ -4,6 +4,10 @@ namespace Mage\FPC\Plugin;
 
 class CacheIdentifierPlugin
 {
+
+    protected $designExceptions;
+    protected $request;
+    protected $config;
     /**
      * Constructor
      *
