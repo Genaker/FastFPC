@@ -33,6 +33,7 @@ class Deploy extends Command
 	    echo $cmd . "\n";
         exec($cmd, $output);
         var_dump($output);
+	    return 0;
     }
 
     /**
