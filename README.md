@@ -9,6 +9,11 @@ The **phpredis** extension provides a native PHP API for communicating with the 
 
 yum install php-pecl-redis
 ```
+## Cloud Flare CDN FPC Cache Microservice Layer 
+
+Works great together with this Cloud Flare Worker FPC cache Layer:
+https://github.com/Genaker/CloudFlare_FPC_Worker
+
 
 ## The Idea behind this Magento 2 FPC performance extension 
 
