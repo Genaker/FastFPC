@@ -53,7 +53,7 @@ class FPC
     $config = @include __DIR__ . '/../../../../app/etc/env.php';
     if (!$config) {
       //For Composer Folder ToDO: remove src from the composer to make app = to vendor
-      $config = @include __DIR__ . '/../../../../../../app/etc/env.php';
+      $config = @include __DIR__ . '/../../../../../app/etc/env.php';
     }
 
     if (!$config){
