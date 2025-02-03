@@ -53,3 +53,17 @@ bin/magento fpc:deploy
 # Performance
 
 FPC generation time is 0.000481128 second.
+
+# Test 
+
+Test Magento Headers: 
+
+<img width="675" alt="image" src="https://github.com/user-attachments/assets/52656300-096c-4e9c-8900-1f5bd9b1c882" />
+In this case, we need install php-redis extension:
+
+```
+sudo apt-get install php-redis 
+```
+
+
+
