@@ -48,10 +48,18 @@ class FPC
       return false;
     }
 
+
     //For app folder
-    $config = require __DIR__ . '/../../../../app/etc/env.php';
-    //For Composer Folder ToDO: remove src from the composer to make app = to vendor
-    // $config = require __DIR__ . '/../../../../../../app/etc/env.php';
+    $config = @include __DIR__ . '/../../../../app/etc/env.php';
+    if (!$config) {
+      //For Composer Folder ToDO: remove src from the composer to make app = to vendor
+      $config = @include __DIR__ . '/../../../../../../app/etc/env.php';
+    }
+
+    if (!$config){
+      // check include path
+      header('FPC-ERROR: Config not found');
+    }
 
     //https://github.com/phpredis/phpredis/blob/develop/INSTALL.markdown
 
