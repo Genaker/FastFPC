@@ -2,13 +2,15 @@ import http from "http";
 import Redis from "ioredis";
 import NodeCache from "node-cache";
 import dotenv from "dotenv";
-import { gunzipSync } from "zlib";
+//import { gunzipSync } from "zlib";
+import { gunzip } from "zlib";
 import crypto from "crypto";
-import stringify from "fast-json-stable-stringify";
+import { minify } from "html-minifier-terser";
 
 dotenv.config();
 
-const prefix = "zc:k:" + (process.env.PREFIX || 'b30_');
+const corePrefix = "zc:k:";
+const prefix = corePrefix + (process.env.PREFIX || 'b30_');
 
 const redis = new Redis({
     host: process.env.REDIS_HOST || "127.0.0.1",
@@ -17,15 +19,17 @@ const redis = new Redis({
     keyPrefix: prefix // Magento Redis Prefix
 });
 
-// APCu Equivalent (Node.js in-memory cache)
-const cache = new NodeCache({ stdTTL: parseInt(process.env.CACHE_TTL) || 60 }); // 5 min cache
-
 // Config Options
 const DEBUG = getEnvBoolean("DEBUG", false);
 const USE_CACHE = getEnvBoolean("USE_CACHE", false); // Enable in-memory cache
+const CACHE_TTL = parseInt(process.env.CACHE_TTL) || 60;
 const IGNORED_URLS = ["/customer", "/media", "/admin", "/checkout"];
 const HTTPS = getEnvBoolean("HTTPS", true);
 const HOST = process.env.HOST || false;
+const MINIFY = getEnvBoolean("MINIFY");
+
+// APCu Equivalent (Node.js in-memory cache)
+const cache = new NodeCache({ stdTTL: CACHE_TTL }); // 5 min cache
 
 // Start HTTP Server
 const server = http.createServer(async (req, res) => {
@@ -41,7 +45,6 @@ const server = http.createServer(async (req, res) => {
 
     try {
         const cacheKey = getCacheKey(req);
-
         if (DEBUG) {
             res.setHeader("FPC-KEY", cacheKey);
             console.log("KEY:" + prefix + cacheKey);
@@ -62,8 +65,9 @@ const server = http.createServer(async (req, res) => {
                 return sendNotFound(res);
             }
 
-            cachedPage = uncompress(cachedPage);
-            if (USE_CACHE) cache.set(cacheKey, cachedPage);
+            cachedPage = await uncompress(cachedPage);
+            cachedPage = JSON.parse(cachedPage);
+            if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
         } else {
             if (DEBUG) res.setHeader("Fast-Cache", "HIT (NodeCACHE)");
         }
@@ -79,10 +83,20 @@ const server = http.createServer(async (req, res) => {
         const endTime = process.hrtime(startTime);
         res.setHeader("FPC-TIME", `${(endTime[1] / 1e6).toFixed(2)}ms`);
 
+
+        let content = cachedPage.content;
+        if (MINIFY && !cachedPage.minified) {
+            content = await minifyHTML(content);
+            cachedPage.content = content;
+            cachedPage.minified = true;
+            if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
+            //Do to resave minified to Redis ;)
+        }
+
         console.log("FPC-TIME:[" + req.url + "]->" + (endTime[1] / 1e6).toFixed(2) + "ms");
 
         res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(cachedPage.content);
+        res.end(content);
     } catch (err) {
         if (DEBUG) {
             res.setHeader("FPC-ERROR", "Exception");
@@ -124,17 +138,14 @@ function getUrl(req) {
 }
 
 // Gzip Decompression for Cached Content
-function uncompress(page) {
-    if (page.startsWith("gz")) {
-        return gunzipSync(Buffer.from(page, "base64")).toString();
-    }
-    return JSON.parse(page);
+async function uncompress(page) {
+    return await decompressGzippedBase64(page);
 }
 
 // Generate SHA1 Hash for Cache Keys
 function hashData(data) {
-    // to match json_encode
-    var jsonString = stringify(data).replace(/\//g, "/")
+    // to match PHP json_encode
+    var jsonString = JSON.stringify(data).replace(/\//g, "/")
         .replace(/\//g, "\\/") // Escape slashes like PHP (\/)
         .replace(/[\u007f-\uffff]/g, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`); // Unicode fix
 
@@ -169,6 +180,37 @@ function getEnvBoolean(key, defaultValue) {
             : defaultValue;
 };
 
+function decompressGzippedBase64(page) {
+    return new Promise((resolve, reject) => {
+        // For now we are just supporting GZip 
+        if (!page.startsWith("gz")) {
+            return resolve(page); // Return original if not gzipped
+        }
+
+        const buffer = Buffer.from(page, "base64");
+        console.log("REDIS-GZIPed");
+
+        gunzip(buffer, (err, decompressed) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(decompressed.toString());
+            }
+        });
+    });
+}
+
+async function minifyHTML(htmlContent) {
+    return await minify(htmlContent, {
+        collapseWhitespace: true,  // Remove unnecessary spaces
+        removeComments: true,      // Remove HTML comments
+        removeRedundantAttributes: true, // Remove default attributes (e.g., `<input type="text">`)
+        removeEmptyAttributes: true, // Remove empty attributes
+        minifyCSS: true,  // Minify inline CSS
+        minifyJS: true,   // Minify inline JS
+    });
+}
+
 // Start Server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => console.log(`🚀 Node.js FPC Server running on port ${PORT}`));
