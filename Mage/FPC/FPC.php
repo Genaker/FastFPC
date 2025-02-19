@@ -181,7 +181,7 @@ class FPC
       echo '<h2>Server:</h2>';
       var_dump($_SERVER);
     }
-    @header("FPC-URL: " . json_encode($data));
+    @header("HASH-DATA: " . json_encode($data));
     return sha1(json_encode($data));
   }
 
