@@ -66,6 +66,8 @@ sudo apt-get install php-redis
 
 #NodeJS implementation
 npm install ioredis node-cache dotenv
+or nmp install
+node FPC.js
 
 Replace:
 ```
@@ -92,6 +94,15 @@ location @fallback {
     try_files $uri $uri/ /index.php$is_args$args;
 }
 ```
-
+Performance Test : 
+```
+FPC-TIME:0.88ms
+FPC-TIME:0.99ms
+FPC-TIME:0.79ms
+FPC-TIME:0.98ms
+FPC-TIME:1.51ms
+FPC-TIME:1.08ms
+FPC-TIME:0.98ms
+```
 
 
