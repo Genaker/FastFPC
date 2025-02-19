@@ -65,12 +65,14 @@ In this case, we need install php-redis extension:
 sudo apt-get install php-redis 
 ```
 
-#NodeJS implementation
+# NodeJS implementation
+
+```
 npm install ioredis node-cache dotenv
 or nmp install
 node FPC.js
-
-Replace:
+```
+Replace Nginx:
 ```
 location / {
     try_files $uri $uri/ /index.php$is_args$args;
