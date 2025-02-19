@@ -80,7 +80,7 @@ location / {
 ```
 With:
 ```
-# ✅ Try Node.js first, fallback to static files, then PHP
+# Try Node.js first, fallback to static files, then PHP
 location / {
     # Try serving from Node.js first
     proxy_pass http://127.0.0.1:3001;
@@ -92,7 +92,7 @@ location / {
     error_page 502 504 = @fallback;
 }
 
-# ✅ Fallback to Static Files or PHP if Node.js Fails
+# Fallback to Static Files or PHP if Node.js Fails
 location @fallback {
     try_files $uri $uri/ /index.php$is_args$args;
 }
