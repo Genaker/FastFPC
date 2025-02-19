@@ -72,6 +72,7 @@ const server = http.createServer(async (req, res) => {
         // Measure Total Execution Time
         const endTime = process.hrtime(startTime);
         res.setHeader("FPC-TIME", `${(endTime[1] / 1e6).toFixed(2)}ms`);
+        console.log("FPC-TIME:" + (endTime[1] / 1e6).toFixed(2) + "ms");
 
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(cachedPage.content);
