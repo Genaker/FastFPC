@@ -18,11 +18,11 @@ const redis = new Redis({
 });
 
 // APCu Equivalent (Node.js in-memory cache)
-const cache = new NodeCache({ stdTTL: 300 }); // 5 min cache
+const cache = new NodeCache({ stdTTL: parseInt(process.env.CACHE_TTL) || 60 }); // 5 min cache
 
 // Config Options
-const DEBUG = true;
-const USE_APCU = false; // Enable in-memory cache
+const DEBUG = getEnvBoolean("DEBUG", false);
+const USE_CACHE = getEnvBoolean("USE_CACHE", false); // Enable in-memory cache
 const IGNORED_URLS = ["/customer", "/media", "/admin", "/checkout"];
 const HTTPS = getEnvBoolean("HTTPS", true);
 const HOST = process.env.HOST || false;
@@ -30,19 +30,25 @@ const HOST = process.env.HOST || false;
 // Start HTTP Server
 const server = http.createServer(async (req, res) => {
     const startTime = process.hrtime();
-    console.log("URL:" + req.url);
+
     if (!isCached(req)) {
-        if (DEBUG) res.setHeader("Fast-Cache", "FALSE");
+        if (DEBUG) {
+            res.setHeader("Fast-Cache", "FALSE");
+            console.log("URL:" + req.url);
+        }
         return sendNotFound(res);
     }
 
     try {
         const cacheKey = getCacheKey(req);
-        console.log("KEY:" + prefix + cacheKey);
-        if (DEBUG) res.setHeader("FPC-KEY", cacheKey);
 
-        // Try APCu (NodeCache) First
-        let cachedPage = USE_APCU ? cache.get(cacheKey) : null;
+        if (DEBUG) {
+            res.setHeader("FPC-KEY", cacheKey);
+            console.log("KEY:" + prefix + cacheKey);
+        }
+
+        // Try APCu like (NodeCache) First
+        let cachedPage = USE_CACHE ? cache.get(cacheKey) : null;
 
         if (!cachedPage) {
             const redisStartTime = process.hrtime();
@@ -57,9 +63,9 @@ const server = http.createServer(async (req, res) => {
             }
 
             cachedPage = uncompress(cachedPage);
-            if (USE_APCU) cache.set(cacheKey, cachedPage);
+            if (USE_CACHE) cache.set(cacheKey, cachedPage);
         } else {
-            if (DEBUG) res.setHeader("Fast-Cache", "HIT (APCu)");
+            if (DEBUG) res.setHeader("Fast-Cache", "HIT (NodeCACHE)");
         }
 
         // Set Cached Headers
@@ -72,13 +78,16 @@ const server = http.createServer(async (req, res) => {
         // Measure Total Execution Time
         const endTime = process.hrtime(startTime);
         res.setHeader("FPC-TIME", `${(endTime[1] / 1e6).toFixed(2)}ms`);
-        console.log("FPC-TIME:" + (endTime[1] / 1e6).toFixed(2) + "ms");
+
+        console.log("FPC-TIME:[" + req.url + "]->" + (endTime[1] / 1e6).toFixed(2) + "ms");
 
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(cachedPage.content);
     } catch (err) {
-        if (DEBUG) res.setHeader("FPC-ERROR", "Exception");
-        console.error("FPC Error:", err);
+        if (DEBUG) {
+            res.setHeader("FPC-ERROR", "Exception");
+            console.error("FPC Error:", err);
+        }
         sendNotFound(res);
     }
 });
@@ -108,7 +117,9 @@ function getUrl(req) {
     }
     // [true,"https:\/\/react-luma.cnxt.link\/",null]
     const url = (scheme + "://" + host + req.url)
-    console.log(JSON.stringify(url));
+    if (DEBUG) {
+        console.log(JSON.stringify(url));
+    }
     return url;
 }
 
@@ -127,7 +138,9 @@ function hashData(data) {
         .replace(/\//g, "\\/") // Escape slashes like PHP (\/)
         .replace(/[\u007f-\uffff]/g, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`); // Unicode fix
 
-    console.log("HASH-DATA:" + jsonString);
+    if (DEBUG) {
+        console.log("HASH-DATA:" + jsonString);
+    }
 
     return crypto.createHash("sha1").update(jsonString).digest("hex").toUpperCase();
 }
