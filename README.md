@@ -86,7 +86,7 @@ location / {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
     # If Node.js fails, fallback to static files and then PHP
-    error_page 502 504 = @fallback;
+    error_page 406 502 504 = @fallback;
 }
 
 # ✅ Fallback to Static Files or PHP if Node.js Fails

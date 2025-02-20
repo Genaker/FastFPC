@@ -158,7 +158,7 @@ function hashData(data) {
 
 // Send 404 Not Found Response
 function sendNotFound(res) {
-    res.writeHead(404, { "Content-Type": "application/json" });
+    res.writeHead(406, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not Cached" }));
 }
 
