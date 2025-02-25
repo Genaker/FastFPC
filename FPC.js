@@ -57,8 +57,9 @@ const server = http.createServer(async (req, res) => {
             const redisStartTime = process.hrtime();
             cachedPage = await getRedisValue(cacheKey, "d");
             const redisEndTime = process.hrtime(redisStartTime);
+            const redisTimeMs = (redisEndTime[1] / 1e6).toFixed(2);
+            if (DEBUG) res.setHeader("Server-Timing", `redis;dur=${redisTimeMs}`);
 
-            if (DEBUG) res.setHeader("Redis-Time", `${(redisEndTime[1] / 1e6).toFixed(2)}ms`);
 
             if (!cachedPage) {
                 if (DEBUG) res.setHeader("Fast-Cache", "MISS");
@@ -79,19 +80,19 @@ const server = http.createServer(async (req, res) => {
             }
         }
 
-        // Measure Total Execution Time
-        const endTime = process.hrtime(startTime);
-        res.setHeader("FPC-TIME", `${(endTime[1] / 1e6).toFixed(2)}ms`);
-
-
         let content = cachedPage.content;
         if (MINIFY && !cachedPage.minified) {
             content = await minifyHTML(content);
             cachedPage.content = content;
             cachedPage.minified = true;
             if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
-            //Do to resave minified to Redis ;)
+            //ToDo: resave minified to Redis ;)
         }
+
+        // Measure Total Execution Time
+        const endTime = process.hrtime(startTime);
+        const fpcTimeMs = (endTime[1] / 1e6).toFixed(2);
+        res.setHeader("Server-Timing", `fpc;dur=${fpcTimeMs}`);
 
         console.log("FPC-TIME:[" + req.url + "]->" + (endTime[1] / 1e6).toFixed(2) + "ms");
 

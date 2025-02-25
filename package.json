@@ -1,6 +1,6 @@
 {
     "name": "magento-fpc-nodejs",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Magento Full Page Cache (FPC) implemented in Node.js with Redis support",
     "type": "module",
     "main": "FPC.js",
