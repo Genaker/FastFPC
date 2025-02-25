@@ -59,17 +59,20 @@ FPC generation time is 0.000481128 second.
 Test Magento Headers: 
 
 <img width="675" alt="image" src="https://github.com/user-attachments/assets/52656300-096c-4e9c-8900-1f5bd9b1c882" />
+</br>
 In this case, we need install php-redis extension:
 ```
 sudo apt-get install php-redis 
 ```
 
-#NodeJS implementation
+# NodeJS implementation
+
+```
 npm install ioredis node-cache dotenv
 or nmp install
 node FPC.js
-
-Replace:
+```
+Replace Nginx:
 ```
 location / {
     try_files $uri $uri/ /index.php$is_args$args;
@@ -77,7 +80,7 @@ location / {
 ```
 With:
 ```
-# ✅ Try Node.js first, fallback to static files, then PHP
+# Try Node.js first, fallback to static files, then PHP
 location / {
     # Try serving from Node.js first
     proxy_pass http://127.0.0.1:3001;
@@ -89,7 +92,7 @@ location / {
     error_page 406 502 504 = @fallback;
 }
 
-# ✅ Fallback to Static Files or PHP if Node.js Fails
+# Fallback to Static Files or PHP if Node.js Fails
 location @fallback {
     try_files $uri $uri/ /index.php$is_args$args;
 }
