@@ -27,9 +27,18 @@ const IGNORED_URLS = ["/customer", "/media", "/admin", "/checkout"];
 const HTTPS = getEnvBoolean("HTTPS", true);
 const HOST = process.env.HOST || false;
 const MINIFY = getEnvBoolean("MINIFY");
+const USE_STALE = getEnvBoolean("USE_STALE", true);
 
 // APCu Equivalent (Node.js in-memory cache)
 const cache = new NodeCache({ stdTTL: CACHE_TTL }); // 5 min cache
+
+if (USE_STALE) {
+    cache.on("del"/*expired*/, (key, value) => {
+        console.log("EXPIRED:" + key);
+        value.expired = true;
+        cache.set(key, value, CACHE_TTL * 10);
+    });
+}
 
 // Start HTTP Server
 const server = http.createServer(async (req, res) => {
@@ -51,7 +60,23 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Try APCu like (NodeCache) First
+        var cacheInfo = null;
         let cachedPage = USE_CACHE ? cache.get(cacheKey) : null;
+        if (cachedPage) {
+            cacheInfo = getCacheInfo(cacheKey);
+            res.setHeader("Node-Cache", "true");
+            console.log('NodeCACHE: HIT');
+        } else if (USE_STALE) {
+            // when cache expired we need check stale twice 
+            cachedPage = cache.get(cacheKey)
+            if (cachedPage) {
+                cacheInfo = getCacheInfo(cacheKey);
+                res.setHeader("Node-Stale", "true");
+                console.log('NodeCACHE: STALE');
+            } else {
+                console.log('NodeCACHE: MISS');
+            }
+        }
 
         if (!cachedPage) {
             const redisStartTime = process.hrtime();
@@ -60,14 +85,11 @@ const server = http.createServer(async (req, res) => {
             const redisTimeMs = (redisEndTime[1] / 1e6).toFixed(2);
             if (DEBUG) res.setHeader("Server-Timing", `redis;dur=${redisTimeMs}`);
 
-
             if (!cachedPage) {
                 if (DEBUG) res.setHeader("Fast-Cache", "MISS");
                 return sendNotFound(res);
             }
 
-            cachedPage = await uncompress(cachedPage);
-            cachedPage = JSON.parse(cachedPage);
             if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
         } else {
             if (DEBUG) res.setHeader("Fast-Cache", "HIT (NodeCACHE)");
@@ -82,11 +104,13 @@ const server = http.createServer(async (req, res) => {
 
         let content = cachedPage.content;
         if (MINIFY && !cachedPage.minified) {
+            (async () => {
             content = await minifyHTML(content);
-            cachedPage.content = content;
-            cachedPage.minified = true;
-            if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
-            //ToDo: resave minified to Redis ;)
+                cachedPage.content = content;
+                cachedPage.minified = true;
+                if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
+                //ToDo: resave minified to Redis ;)
+            })();
         }
 
         // Measure Total Execution Time
@@ -97,10 +121,30 @@ const server = http.createServer(async (req, res) => {
         console.log("FPC-TIME:[" + req.url + "]->" + (endTime[1] / 1e6).toFixed(2) + "ms");
 
         res.writeHead(200, { "Content-Type": "text/html" });
+
+        if (USE_STALE && cacheInfo !== null && cacheInfo.stale) {
+            (async () => {
+                try {
+                    console.log('Fetched new data');
+                    const newContent = await fetchOriginalData(req, {'Refresh': '1'});
+                    if (newContent) {
+                        let oldCache = cache.get(cacheKey);
+                        let newCache = await getRedisValue(cacheKey, "d");
+                        if (oldCache && newCache) {
+                            // Update the cache with new data
+                            console.log('SET new data');
+                            cache.set(cacheKey, newCache, CACHE_TTL);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching new data:', error);
+                }
+            })();
+        }
+        console.log('----Response Return---');
         res.end(content);
     } catch (err) {
         if (DEBUG) {
-            res.setHeader("FPC-ERROR", "Exception");
             console.error("FPC Error:", err);
         }
         sendNotFound(res);
@@ -110,6 +154,8 @@ const server = http.createServer(async (req, res) => {
 // Function to Check if Request is Cacheable
 function isCached(req) {
     if (req.method !== "GET") return false;
+    // Bypass cache for refresh requests
+    if (req.headers["refresh"] === "1") return false;
     return !IGNORED_URLS.some(url => req.url.startsWith(url));
 }
 
@@ -163,10 +209,16 @@ function sendNotFound(res) {
     res.end(JSON.stringify({ error: "Not Cached" }));
 }
 
-async function getRedisValue(key, field) {
+async function getRedisValue(key, field = "d") {
     try {
-        const value = await redis.hget(key, field); // Use HGET instead of HGETALL
-        // console.log("HGET Response:", JSON.parse(value));
+        let value = await redis.hget(key, field); // Use HGET instead of HGETALL
+        console.log("HGET:", Boolean(value));
+        if (!value) {
+            return false;
+        }
+
+        value = await uncompress(value);
+        value = JSON.parse(value);
         return value;
     } catch (err) {
         console.error("Redis Error:", err);
@@ -210,6 +262,44 @@ async function minifyHTML(htmlContent) {
         minifyCSS: true,  // Minify inline CSS
         minifyJS: true,   // Minify inline JS
     });
+}
+
+// Function to get the TTL and saved time of a cached object
+function getCacheInfo(key) {
+    const now = Date.now();
+    const ttl = cache.getTtl(key); // Get the TTL of the key timestamp when expired 
+    let stale = false;
+    if (cache.get(key).expired) {
+        stale = true;
+    }
+
+    if (ttl !== undefined) {
+        console.log(`Key: ${key}`);
+        console.log(`TTL: ${ttl} ms`);
+        console.log(`Expired:`, stale);
+    } else {
+        //console.log(`Key: ${key} not found in cache.`);
+    }
+    return {stale, ttl}
+}
+
+// Function to fetch original data with additional headers
+async function fetchOriginalData(req, additionalHeaders = {}) {
+    try {
+        const url = getUrl(req);
+        const originalHeaders = req.headers;
+        // Merge original headers with additional headers
+        const headers = { ...originalHeaders, ...additionalHeaders };
+
+        const response = await fetch(url, { headers });
+        if (!response.ok) {
+            return false;
+        }
+        return response;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
 }
 
 // Start Server
