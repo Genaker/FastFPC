@@ -97,7 +97,11 @@ location @fallback {
     try_files $uri $uri/ /index.php$is_args$args;
 }
 ```
-Performance Test : 
+
+# Understanding Stale-While-Revalidate
+The stale-while-revalidate caching strategy is designed to minimize latency by serving cached content immediately, even if it’s slightly outdated, while simultaneously updating the cache with fresh data in the background. This approach ensures that users receive a quick response and the cache remains up-to-date without blocking the main request flow.
+
+# Performance Test : 
 ```
 FPC-TIME:0.88ms
 FPC-TIME:0.99ms
