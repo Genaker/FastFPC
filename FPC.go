@@ -69,6 +69,7 @@ type CacheConfig struct {
     StaleExpiry time.Duration
     EnableProfile bool
     ProfilePort   string
+    SecretKey    string
 }
 
 type CacheEntry struct {
@@ -132,6 +133,7 @@ func loadConfig() *CacheConfig {
             StaleExpiry: time.Duration(getEnvInt("STALE_TTL", 432000)) * time.Second, // 5 days = 432000 seconds
             EnableProfile: getEnvBool("ENABLE_PROFILE", true),
             ProfilePort:  getEnv("PROFILE_PORT", "6060"),
+            SecretKey:    getEnv("SECRET_KEY", "changeme"),
         }
     })
     return cachedConfig
@@ -160,12 +162,17 @@ func main() {
     // Register HTTP handler
     http.HandleFunc("/", handleRequest)
 
+    // Register cache listing endpoint
+    http.HandleFunc("/cache/list", handleSecuredCacheList)
+
     // Log startup information
     infoLog("FPC Server starting:\n")
     infoLog("- Port: %s\n", port)
     infoLog("- Backend: %s://%s\n", map[bool]string{true: "https", false: "http"}[config.UseHTTPS], config.Host)
     infoLog("- Redis: %s:%s (DB: %d)\n", config.RedisHost, config.RedisPort, config.RedisDB)
     infoLog("- Cache: %v (TTL: %.0fs)\n", config.UseCache, config.CacheTTL.Seconds())
+    infoLog("- Cache List URL: http://localhost:%s/cache/list (Secret Key Required)\n", port)
+    infoLog("- Cache List JSON: http://localhost:%s/cache/list?format=json\n", port)
 
 
 	fmt.Println(`
@@ -657,4 +664,104 @@ func getEnvInt(key string, defaultValue int) int {
         }
     }
     return defaultValue
+}
+
+// First, define a common struct type to use in both places
+type CacheKeyInfo struct {
+    Key       string    `json:"key"`
+    Size      int       `json:"size"`
+    ExpiredAt string    `json:"expired_at,omitempty"`
+    IsStale   bool      `json:"is_stale"`
+}
+
+// Update the handleSecuredCacheList function
+func handleSecuredCacheList(w http.ResponseWriter, r *http.Request) {
+    config := loadConfig()
+    
+    // Check secret key from header or query parameter
+    secretKey := r.Header.Get("X-Secret-Key")
+    if secretKey == "" {
+		// as GET query parameter
+        secretKey = r.URL.Query().Get("key")
+    }
+
+    if secretKey != config.SecretKey {
+        w.WriteHeader(http.StatusUnauthorized)
+        errorLog("Unauthorized cache list access attempt\n")
+        return
+    }
+
+    format := r.URL.Query().Get("format")
+    var cacheKeys []CacheKeyInfo
+
+    // Get items from local cache
+    for k, item := range localCache.Items() {
+        if entry, ok := item.Object.(CacheEntry); ok {
+            cacheKeys = append(cacheKeys, CacheKeyInfo{
+                Key:       k,
+                Size:      len(entry.Content),
+                ExpiredAt: time.Unix(0, item.Expiration).Format(time.RFC3339),
+                IsStale:   entry.Expired,
+            })
+        }
+    }
+
+    switch format {
+    case "json":
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(cacheKeys)
+    default:
+        w.Header().Set("Content-Type", "text/html")
+        serveHTMLCacheList(w, cacheKeys)
+    }
+}
+
+func serveHTMLCacheList(w http.ResponseWriter, keys []CacheKeyInfo) {
+    tmpl := `<!DOCTYPE html>
+    <html>
+    <head>
+        <title>FPC Cache Keys</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            th { background-color: #4CAF50; color: white; }
+            .stale { color: #ff9800; }
+            .active { color: #4CAF50; }
+            .count { font-size: 1.2em; margin-bottom: 20px; }
+        </style>
+    </head>
+    <body>
+        <h1>FPC Cache Keys</h1>
+        <div class="count">Total Keys: %d</div>
+        <table>
+            <tr>
+                <th>Key</th>
+                <th>Size</th>
+                <th>Expires</th>
+                <th>Status</th>
+            </tr>
+            %s
+        </table>
+    </body>
+    </html>`
+
+    var rows string
+    for _, k := range keys {
+        status := "active"
+        statusClass := "active"
+        if k.IsStale {
+            status = "stale"
+            statusClass = "stale"
+        }
+        rows += fmt.Sprintf("<tr><td>%s</td><td>%d</td><td>%s</td><td class='%s'>%s</td></tr>",
+            k.Key,
+            k.Size,
+            k.ExpiredAt,
+            statusClass,
+            status)
+    }
+
+    fmt.Fprintf(w, tmpl, len(keys), rows)
 }
