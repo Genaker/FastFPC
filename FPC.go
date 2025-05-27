@@ -129,7 +129,7 @@ func loadConfig() *CacheConfig {
             CacheTTL:    time.Duration(getEnvInt("CACHE_TTL", 60)) * time.Second,
             UseCache:    getEnvBool("USE_CACHE", false),
             UseStale:    getEnvBool("USE_STALE", true),
-            StaleExpiry: time.Duration(getEnvInt("STALE_TTL", 600)) * time.Second,
+            StaleExpiry: time.Duration(getEnvInt("STALE_TTL", 432000)) * time.Second, // 5 days = 432000 seconds
             EnableProfile: getEnvBool("ENABLE_PROFILE", true),
             ProfilePort:  getEnv("PROFILE_PORT", "6060"),
         }
@@ -179,7 +179,7 @@ func main() {
 	║ ╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝  ░░ ╚═════╝  ╚═════╝  ║
 	║                                                                                       ║
 	╚═══════════════════════════════════════════════════════════════════════════════════════╝
-	Magento GO(GoGento) Cache server V1.0.0
+	Magento GO(GoGento) Cache Server V1.0.1
 	`)
     
     log.Fatal(http.ListenAndServe(":"+port, nil))
