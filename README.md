@@ -131,3 +131,28 @@ FPC-TIME:0.22ms
 FPC-TIME:0.20ms
 ```
 
+# Magento GO FPC (Full Page Cache)
+A high-performance caching solution for Magento built with Go, featuring multi-layer caching, goroutines for concurrent processing, and Redis integration.<\br>
+
+Features:
+- Multi-layer caching (Local memory + Redis)
+- Concurrent request handling with goroutines
+- Rate limiting (250 req/s with 500 burst)
+- Stale cache management
+- Profiling and monitoring
+- Gzip compression support
+- Static file caching
+- Debug mode with detailed logging
+
+## Running the Server
+
+```
+# Build the binary
+go build -o fpc FPC.go
+
+# Run the server
+./fpc
+
+# Or run directly
+go run FPC.go
+```
