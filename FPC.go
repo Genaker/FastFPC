@@ -152,8 +152,10 @@ func main() {
     port := getEnv("PORT", "8080")
     config := loadConfig()
 
+	if (false == config.EnableProfile) {
     // Initialize profiler if enabled
     initProfiler(config)
+	}
 
     // Register HTTP handler
     http.HandleFunc("/", handleRequest)
@@ -164,6 +166,21 @@ func main() {
     infoLog("- Backend: %s://%s\n", map[bool]string{true: "https", false: "http"}[config.UseHTTPS], config.Host)
     infoLog("- Redis: %s:%s (DB: %d)\n", config.RedisHost, config.RedisPort, config.RedisDB)
     infoLog("- Cache: %v (TTL: %.0fs)\n", config.UseCache, config.CacheTTL.Seconds())
+
+
+	fmt.Println(`
+	╔═══════════════════════════════════════════════════════════════════════════════════════╗
+	║                                                                                       ║
+	║ ███╗   ███╗ █████╗  ██████╗ ███████╗███╗   ██╗████████╗ ██████╗    ██████╗  ██████╗   ║
+	║ ████╗ ████║██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗   ██╔════╝ ██╔═══██╗ ║
+	║ ██╔████╔██║███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ██║   ██║   ██║  ███╗██║   ██║ ║
+	║ ██║╚██╔╝██║██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ██║   ██║   ██║   ██║██║   ██║ ║
+	║ ██║ ╚═╝ ██║██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   ╚██████╔╝   ╚██████╔╝╚██████╔╝ ║
+	║ ╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝  ░░ ╚═════╝  ╚═════╝  ║
+	║                                                                                       ║
+	╚═══════════════════════════════════════════════════════════════════════════════════════╝
+	Magento GO(GoGento) Cache server V1.0.0
+	`)
     
     log.Fatal(http.ListenAndServe(":"+port, nil))
 }
