@@ -17,7 +17,7 @@ https://github.com/Genaker/CloudFlare_FPC_Worker
 
 ## The Idea behind this Magento 2 FPC performance extension 
 
-When I developed a Shopware 6-based website I noticed fast sub 1ms performance of the FPC cache. I checked the code and it amazed me. It is simple and made a right PHP  way! You don't need Varnish to run your FPC cache fast. You need just fast code without reusing the Magento 2 junk core framework.
+When I developed a Shopware 6-based website I noticed fast sub 1ms performance of the FPC cache. I checked the code and it amazed me. It is simple and made the right PHP  way! Symfony Http cache! You don't need Varnish to run your FPC cache fast. You need just fast code without reusing the Magento 2 junk core framework.
 
 ## Installation 
 
