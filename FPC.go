@@ -154,7 +154,6 @@ func main() {
 	config := loadConfig()
 
 	if config.EnableProfile {
-		// Initialize profiler if enabled
 		initProfiler(config)
 	}
 

@@ -229,7 +229,7 @@ async function setRedisValue(key, data, field = "d") {
     try {
         const compressed = await compressToGzippedBase64(data);
         await redis.hset(key, field, compressed);
-        console.log("HSET: Successfully saved to Redis");
+        console.log("HSET: Successfully saved to Redis:", key);
         return true;
     } catch (err) {
         console.error("Redis SET Error:", err);
