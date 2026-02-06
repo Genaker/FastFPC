@@ -2,8 +2,7 @@ import http from "http";
 import Redis from "ioredis";
 import NodeCache from "node-cache";
 import dotenv from "dotenv";
-//import { gunzipSync } from "zlib";
-import { gunzip } from "zlib";
+import { gunzip, gzip } from "zlib";
 import crypto from "crypto";
 import { minify } from "html-minifier-terser";
 
@@ -109,7 +108,8 @@ const server = http.createServer(async (req, res) => {
                 cachedPage.content = content;
                 cachedPage.minified = true;
                 if (USE_CACHE) cache.set(cacheKey, cachedPage, CACHE_TTL);
-                //ToDo: resave minified to Redis ;)
+                // Save minified content back to Redis
+                await setRedisValue(cacheKey, cachedPage);
             })();
         }
 
@@ -225,6 +225,18 @@ async function getRedisValue(key, field = "d") {
     }
 }
 
+async function setRedisValue(key, data, field = "d") {
+    try {
+        const compressed = await compressToGzippedBase64(data);
+        await redis.hset(key, field, compressed);
+        console.log("HSET: Successfully saved to Redis:", key);
+        return true;
+    } catch (err) {
+        console.error("Redis SET Error:", err);
+        return false;
+    }
+}
+
 function getEnvBoolean(key, defaultValue) {
     return process.env[key]?.toLowerCase() === "true"
         ? true
@@ -248,6 +260,22 @@ function decompressGzippedBase64(page) {
                 reject(err);
             } else {
                 resolve(decompressed.toString());
+            }
+        });
+    });
+}
+
+function compressToGzippedBase64(data) {
+    return new Promise((resolve, reject) => {
+        const jsonString = JSON.stringify(data);
+        
+        gzip(Buffer.from(jsonString), (err, compressed) => {
+            if (err) {
+                reject(err);
+            } else {
+                // Add 'gz' prefix to match the format expected by decompress
+                const base64 = compressed.toString('base64');
+                resolve(base64);
             }
         });
     });
